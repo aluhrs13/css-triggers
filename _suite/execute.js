@@ -35,7 +35,8 @@ const browsers = {
           'devtools.timeline',
           'toplevel',
           'disabled-by-default-devtools.timeline',
-          'disabled-by-default-devtools.timeline.frame'
+          'disabled-by-default-devtools.timeline.frame',
+          'blink.user_timing'
         ].join(',')
       });
       drv.forBrowser('chrome').setChromeOptions(opts);
@@ -43,9 +44,9 @@ const browsers = {
     },
     detect: logs => {
       return {
-        layout: logs.filter(x => x.indexOf('\\"Layout\\"') !== -1).length > 0,
-        paint: logs.filter(x => x.indexOf('\\"Paint\\"') !== -1).length > 0,
-        composite: logs.filter(x => x.indexOf('\\"CompositeLayers\\"') !== -1).length > 0
+        layout: logs.filter(x => x.indexOf('\\"Layout\\\"') !== -1).length > 0,
+        paint: logs.filter(x => x.indexOf('\\"Paint\\\"') !== -1).length > 0,
+        composite: logs.filter(x => x.indexOf('\\"CompositeLayers\\\"') !== -1).length > 0
       };
     }
   },
@@ -87,15 +88,15 @@ var data = {};
 suites.reduce((p, suite) => {
   return p
     .then(() => driver.get(`http://localhost:8433/${suite}.html`))
-    .then(() => driver.executeScript('console.profile("mutationmarker");console.time("mutationmarker2");go();'))
+    .then(() => driver.executeScript('performance.mark("mutationmarker");console.time("mutationmarker2");go();'))
     .then(() => driver.wait(() => driver.executeScript('return window.isDone;')))
-    .then(() => driver.executeScript('console.profileEnd();console.timeEnd();'))
+    .then(() => driver.executeScript('console.timeEnd();'))
     .then(() => driver.manage().logs().get(webdriver.logging.Type.PERFORMANCE))
     .then(logs => {
       logs = logs.map(JSON.stringify.bind(JSON))
       var idx = logs.findIndex(x => x.indexOf('mutationmarker') !== -1);
       logs = logs.slice(idx);
-      // fs.writeFileSync(`${browser}-${suite}.json`, logs);
+      // fs.writeFileSync(`${browser}-${suite}.json`, JSON.stringify(logs));
       data[suite] = browsers[browser].detect(logs);
     });
 }, Promise.resolve(0))
